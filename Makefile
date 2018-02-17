@@ -71,6 +71,9 @@ Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rcc_ex.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_flash.c \
 Src/system_stm32f1xx.c  
 
+
+C_SOURCES += Src/max7219.c
+
 # ASM sources
 ASM_SOURCES =  \
 startup_stm32f103xb.s

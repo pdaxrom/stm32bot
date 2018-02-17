@@ -40,6 +40,7 @@
 #include "stm32f1xx_hal.h"
 
 /* USER CODE BEGIN Includes */
+#include "max7219.h"
 
 /* USER CODE END Includes */
 
@@ -53,6 +54,8 @@ UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
+__IO ITStatus UartReady = RESET;
+
 
 /* USER CODE END PV */
 
@@ -111,6 +114,17 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
+  max7219_init(8);
+
+    user_pwm_setvalue(50);
+    HAL_Delay(2000);
+    user_pwm_setvalue(260);
+    HAL_Delay(2000);
+    user_pwm_setvalue(150);
+    HAL_Delay(2000);
+//    user_pwm_setvalue(150);
+//    user_pwm_setvalue(150);
+//    user_pwm_setvalue(150);
 
   /* USER CODE END 2 */
 
@@ -123,6 +137,10 @@ int main(void)
 
   /* USER CODE BEGIN 3 */
 
+  HAL_GPIO_WritePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin, GPIO_PIN_SET);
+    HAL_Delay(1000);
+  HAL_GPIO_WritePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin, GPIO_PIN_RESET);
+    HAL_Delay(1000);
   }
   /* USER CODE END 3 */
 
@@ -338,6 +356,23 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
+{
+    UartReady = SET;
+}
+
+void user_pwm_setvalue(uint16_t value)
+{
+    TIM_OC_InitTypeDef sConfigOC;
+  
+    sConfigOC.OCMode = TIM_OCMODE_PWM1;
+    sConfigOC.Pulse = value;
+    sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+    sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+    HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2);
+    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+}
 
 /* USER CODE END 4 */
 
