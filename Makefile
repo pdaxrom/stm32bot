@@ -200,6 +200,12 @@ clean:
 	-rm -fR .dep $(BUILD_DIR)
   
 #######################################
+# flash
+#######################################
+flash:
+	st-flash --reset write build/STM32BOT.bin 0x08000000
+
+#######################################
 # dependencies
 #######################################
 -include $(shell mkdir .dep 2>/dev/null) $(wildcard .dep/*)
