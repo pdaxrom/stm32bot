@@ -58,6 +58,12 @@ UART_HandleTypeDef huart1;
 /* Private variables ---------------------------------------------------------*/
 __IO ITStatus UartReady = RESET;
 
+typedef struct {
+	GPIO_PinState lf;
+	GPIO_PinState lr;
+	GPIO_PinState rf;
+	GPIO_PinState rr;
+} MOTO_Pins;
 
 /* USER CODE END PV */
 
@@ -77,6 +83,8 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
 void uart_send_string(char *s);
+
+void moto_command(int c);
 
 /* USER CODE END PFP */
 
@@ -122,21 +130,37 @@ int main(void)
   uart_send_string("max7219 initialization...\n\r");
   max7219_init(8);
 
-  uart_send_string("servo motor calibration...\n\r");
+  uart_send_string("servo sonar calibration...\n\r");
 
-  user_pwm_setvalue(50);
+  sonar_pwm_setvalue(50);
   HAL_Delay(2000);
-  user_pwm_setvalue(260);
+  sonar_pwm_setvalue(260);
   HAL_Delay(2000);
-  user_pwm_setvalue(150);
+  sonar_pwm_setvalue(150);
   HAL_Delay(2000);
 //    user_pwm_setvalue(150);
 //    user_pwm_setvalue(150);
 //    user_pwm_setvalue(150);
+
+
+  uart_send_string("motor calibration...\n\r");
+  moto_command(MOTO_STOP);
+  HAL_Delay(1000);
+  moto_command(MOTO_FWD);
+  HAL_Delay(1000);
+  moto_command(MOTO_REV);
+  HAL_Delay(1000);
+  moto_command(MOTO_FWD_LEFT);
+  HAL_Delay(1000);
+  moto_command(MOTO_FWD_RIGHT);
+  HAL_Delay(1000);
+  moto_command(MOTO_STOP);
 
   uart_send_string("sonar timer start...\n\r");
   HAL_TIM_Base_Start(&htim1);
   sonar_start();
+
+  moto_command(MOTO_FWD);
 
   //unsigned int counter = 0;
 
@@ -151,17 +175,24 @@ int main(void)
 
   /* USER CODE BEGIN 3 */
 
-	  HAL_GPIO_WritePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin, GPIO_PIN_SET);
-	  HAL_Delay(500);
-	  HAL_GPIO_WritePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin, GPIO_PIN_RESET);
-	  HAL_Delay(500);
+//	  HAL_GPIO_WritePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin, GPIO_PIN_SET);
+//	  HAL_Delay(500);
+//	  HAL_GPIO_WritePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin, GPIO_PIN_RESET);
+//	  HAL_Delay(500);
 
 	  {
 		  char tmp[40];
 		  if (sonar_is_ready()) {
-			  sprintf(tmp, "Distance = %d\n\r", sonar_distance());
+			  int distance = sonar_distance();
+			  sprintf(tmp, "Distance = %d\n\r", distance);
 			  uart_send_string(tmp);
 			  sonar_start();
+
+			  if (distance < 100) {
+				  moto_command(MOTO_STOP);
+			  } else {
+				  moto_command(MOTO_FWD);
+			  }
 		  }
 	  }
 
@@ -400,7 +431,8 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(MATRIXLED_CS_GPIO_Port, MATRIXLED_CS_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(SONAR_TRIGGER_GPIO_Port, SONAR_TRIGGER_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, SONAR_TRIGGER_Pin|MOTO_R_FWD_Pin|MOTO_R_REV_Pin|MOTO_L_FWD_Pin 
+                          |MOTO_L_REV_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : BUILTIN_LED_Pin */
   GPIO_InitStruct.Pin = BUILTIN_LED_Pin;
@@ -420,11 +452,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(SONAR_ECHO_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : SONAR_TRIGGER_Pin */
-  GPIO_InitStruct.Pin = SONAR_TRIGGER_Pin;
+  /*Configure GPIO pins : SONAR_TRIGGER_Pin MOTO_R_FWD_Pin MOTO_R_REV_Pin MOTO_L_FWD_Pin 
+                           MOTO_L_REV_Pin */
+  GPIO_InitStruct.Pin = SONAR_TRIGGER_Pin|MOTO_R_FWD_Pin|MOTO_R_REV_Pin|MOTO_L_FWD_Pin 
+                          |MOTO_L_REV_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(SONAR_TRIGGER_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
@@ -447,7 +481,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
     UartReady = SET;
 }
 
-void user_pwm_setvalue(uint16_t value)
+void sonar_pwm_setvalue(uint16_t value)
 {
     TIM_OC_InitTypeDef sConfigOC;
   
@@ -457,6 +491,38 @@ void user_pwm_setvalue(uint16_t value)
     sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
     HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2);
     HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+}
+
+void moto_command(int c)
+{
+	MOTO_Pins pins;
+	switch(c) {
+	case MOTO_STOP:
+		pins = (MOTO_Pins) { GPIO_PIN_RESET, GPIO_PIN_RESET, GPIO_PIN_RESET, GPIO_PIN_RESET};
+		break;
+	case MOTO_FWD:
+		pins = (MOTO_Pins) { GPIO_PIN_SET, GPIO_PIN_RESET, GPIO_PIN_SET, GPIO_PIN_RESET};
+		break;
+	case MOTO_REV:
+		pins = (MOTO_Pins) { GPIO_PIN_RESET, GPIO_PIN_SET, GPIO_PIN_RESET, GPIO_PIN_SET};
+		break;
+	case MOTO_FWD_LEFT:
+		pins = (MOTO_Pins) { GPIO_PIN_RESET, GPIO_PIN_RESET, GPIO_PIN_SET, GPIO_PIN_RESET};
+		break;
+	case MOTO_FWD_RIGHT:
+		pins = (MOTO_Pins) { GPIO_PIN_SET, GPIO_PIN_RESET, GPIO_PIN_RESET, GPIO_PIN_RESET};
+		break;
+	case MOTO_REV_LEFT:
+		pins = (MOTO_Pins) { GPIO_PIN_RESET, GPIO_PIN_SET, GPIO_PIN_RESET, GPIO_PIN_RESET};
+		break;
+	case MOTO_REV_RIGHT:
+		pins = (MOTO_Pins) { GPIO_PIN_RESET, GPIO_PIN_RESET, GPIO_PIN_RESET, GPIO_PIN_SET};
+		break;
+	}
+	HAL_GPIO_WritePin(MOTO_L_FWD_GPIO_Port, MOTO_L_FWD_Pin, pins.lf);
+	HAL_GPIO_WritePin(MOTO_L_REV_GPIO_Port, MOTO_L_REV_Pin, pins.lr);
+	HAL_GPIO_WritePin(MOTO_R_FWD_GPIO_Port, MOTO_R_FWD_Pin, pins.rf);
+	HAL_GPIO_WritePin(MOTO_R_REV_GPIO_Port, MOTO_R_REV_Pin, pins.rr);
 }
 
 /* USER CODE END 4 */

@@ -62,8 +62,16 @@
 #define SONAR_ECHO_EXTI_IRQn EXTI15_10_IRQn
 #define SONAR_TRIGGER_Pin GPIO_PIN_12
 #define SONAR_TRIGGER_GPIO_Port GPIOB
+#define MOTO_R_FWD_Pin GPIO_PIN_3
+#define MOTO_R_FWD_GPIO_Port GPIOB
+#define MOTO_R_REV_Pin GPIO_PIN_4
+#define MOTO_R_REV_GPIO_Port GPIOB
 #define MOTO_R_PWM_Pin GPIO_PIN_5
 #define MOTO_R_PWM_GPIO_Port GPIOB
+#define MOTO_L_FWD_Pin GPIO_PIN_6
+#define MOTO_L_FWD_GPIO_Port GPIOB
+#define MOTO_L_REV_Pin GPIO_PIN_7
+#define MOTO_L_REV_GPIO_Port GPIOB
 
 /* ########################## Assert Selection ############################## */
 /**
@@ -73,6 +81,14 @@
 /* #define USE_FULL_ASSERT    1U */
 
 /* USER CODE BEGIN Private defines */
+
+#define MOTO_STOP	0
+#define MOTO_FWD	1
+#define MOTO_REV	2
+#define MOTO_FWD_LEFT	3
+#define MOTO_FWD_RIGHT	4
+#define MOTO_REV_LEFT	5
+#define MOTO_REV_RIGHT	6
 
 /* USER CODE END Private defines */
 
