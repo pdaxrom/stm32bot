@@ -73,6 +73,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
+void uart_send_string(char *s);
 
 /* USER CODE END PFP */
 
@@ -114,14 +115,17 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
+  uart_send_string("max7219 initialization...\n\r");
   max7219_init(8);
 
-    user_pwm_setvalue(50);
-    HAL_Delay(2000);
-    user_pwm_setvalue(260);
-    HAL_Delay(2000);
-    user_pwm_setvalue(150);
-    HAL_Delay(2000);
+  uart_send_string("servo motor calibration...\n\r");
+
+  user_pwm_setvalue(50);
+  HAL_Delay(2000);
+  user_pwm_setvalue(260);
+  HAL_Delay(2000);
+  user_pwm_setvalue(150);
+  HAL_Delay(2000);
 //    user_pwm_setvalue(150);
 //    user_pwm_setvalue(150);
 //    user_pwm_setvalue(150);
@@ -137,10 +141,10 @@ int main(void)
 
   /* USER CODE BEGIN 3 */
 
-  HAL_GPIO_WritePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin, GPIO_PIN_SET);
-    HAL_Delay(1000);
-  HAL_GPIO_WritePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin, GPIO_PIN_RESET);
-    HAL_Delay(1000);
+	  HAL_GPIO_WritePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin, GPIO_PIN_SET);
+	  HAL_Delay(1000);
+	  HAL_GPIO_WritePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin, GPIO_PIN_RESET);
+	  HAL_Delay(1000);
   }
   /* USER CODE END 3 */
 
@@ -356,6 +360,14 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void uart_send_string(char *s)
+{
+	while (*s) {
+		HAL_UART_Transmit(&huart1, s++, 1, 100000);
+//		s++;
+	}
+}
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
 {
