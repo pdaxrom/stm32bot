@@ -130,6 +130,8 @@ int main(void)
   uart_send_string("max7219 initialization...\n\r");
   max7219_init(8);
 
+
+#if 0
   uart_send_string("servo sonar calibration...\n\r");
 
   sonar_pwm_setvalue(50);
@@ -155,6 +157,7 @@ int main(void)
   moto_command(MOTO_FWD_RIGHT);
   HAL_Delay(1000);
   moto_command(MOTO_STOP);
+#endif
 
   uart_send_string("sonar timer start...\n\r");
   HAL_TIM_Base_Start(&htim1);
