@@ -73,7 +73,8 @@ Src/system_stm32f1xx.c
 
 
 C_SOURCES += Src/max7219.c \
-	     Src/hcsr04.c
+	     Src/hcsr04.c \
+	     Src/movement.c
 
 # ASM sources
 ASM_SOURCES =  \

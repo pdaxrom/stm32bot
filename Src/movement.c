@@ -1,4 +1,9 @@
 #include "main.h"
+#include <stdio.h>
+#include <string.h>
+#include <inttypes.h>
+#include "max7219.h"
+#include "hcsr04.h"
 #include "movement.h"
 
 #define MOVEMENT_STEPS	16
@@ -14,7 +19,7 @@ int movement_init()
 int movement_add(MOVEMENT *m)
 {
 	if (movements_counter > sizeof(movements)/sizeof(MOVEMENT)) {
-		movements[movements_counter] = m;
+		memcpy(&movements[movements_counter], m, sizeof(MOVEMENT));
 
 		movements_counter++;
 
